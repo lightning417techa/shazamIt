@@ -31,21 +31,33 @@ function __log(e, data) {
     recorder.clear();
   }
   function createDownloadLink() {
-    recorder && recorder.exportWAV(function(blob) {
-      var url = URL.createObjectURL(blob);
-      var li = document.createElement('li');
-      var au = document.createElement('audio');
-      var hf = document.createElement('a');
+    recorder && recorder.getBuffer(getBufferCallback);
+    // recorder && recorder.exportWAV(function(blob) {
+    //   var url = URL.createObjectURL(blob);
+    //   var li = document.createElement('li');
+    //   var au = document.createElement('audio');
+    //   var hf = document.createElement('a');
 
-      au.controls = true;
-      au.src = url;
-      hf.href = url;
-      hf.download = new Date().toISOString() + '.wav';
-      hf.innerHTML = hf.download;
-      li.appendChild(au);
-      li.appendChild(hf);
-      recordingslist.appendChild(li);
-    });
+    //   au.controls = true;
+    //   au.src = url;
+    //   hf.href = url;
+    //   hf.download = new Date().toISOString() + '.wav';
+    //   hf.innerHTML = hf.download;
+    //   li.appendChild(au);
+    //   li.appendChild(hf);
+    //   recordingslist.appendChild(li);
+    // });
+  }
+  function getBufferCallback( buffers ) {
+    console.log('buffers: ', buffers);
+    var newSource = audioContext.createBufferSource();
+    var newBuffer = audioContext.createBuffer( 2, buffers[0].length, audioContext.sampleRate );
+    newBuffer.getChannelData(0).set(buffers[0]);
+    newBuffer.getChannelData(1).set(buffers[1]);
+    newSource.buffer = newBuffer;
+
+    newSource.connect( audioContext.destination );
+    newSource.start(0);
   }
   window.onload = function init() {
     try {
