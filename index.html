@@ -10,7 +10,7 @@
 </head>
 <body>
 
-  <h1>Recorder.js simple WAV export example</h1>
+  <h1>Shazam It!</h1>
 
   <p>Make sure you are using a recent version of Google Chrome.</p>
   <p>Also before you enable microphone input either plug in headphones or turn the volume down if you want to avoid ear splitting feedback!</p>
@@ -18,15 +18,35 @@
   <button onclick="startRecording(this);">record</button>
   <button onclick="stopRecording(this);" disabled>stop</button>
 
-  <h2>Recordings</h2>
-  <ul id="recordingslist"></ul >
-
   <h2>Log</h2>
   <pre id="log"></pre>
+
+  <h2></h2>
+  <div class="panel">
+    <p>Original</p>
+    <div id="original" class="example"></div>
+  </div>
+  <div class="panel">
+    <p>Original Filtered</p>
+    <div id="original_filtered" class="example"></div>
+  </div>
+  <div class="panel">
+    <p>FFT</p>
+    <div id="fft" class="example"></div>
+  </div>
+  <div class="panel">
+    <p>FFT Filtered</p>
+    <div id="fft_filtered" class="example"></div>
+  </div>
+  <div class="panel">
+    <p>All In One</p>
+    <div id="all_in_one" class="example"></div>
+  </div>
 
   <script src="/lib/recorder.js"></script>
   <script src="/lib/complex-array.js"></script>
   <script src="/lib/fft.js"></script>
+  <script src="/lib/drawToCanvas.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

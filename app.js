@@ -29,31 +29,10 @@ function stopRecording(button) {
   button.previousElementSibling.disabled = false;
   __log('Stopped recording.');
 
-  // create WAV download link using audio data blob
-  // createDownloadLink();
-
   // create audio buffer that can be thumbprinted
   createAudioBuffer();
 
   recorder.clear();
-}
-
-function createDownloadLink() {
-  recorder && recorder.exportWAV(function(blob) {
-    var url = URL.createObjectURL(blob);
-    var li = document.createElement('li');
-    var au = document.createElement('audio');
-    var hf = document.createElement('a');
-
-    au.controls = true;
-    au.src = url;
-    hf.href = url;
-    hf.download = new Date().toISOString() + '.wav';
-    hf.innerHTML = hf.download;
-    li.appendChild(au);
-    li.appendChild(hf);
-    recordingslist.appendChild(li);
-  });
 }
 
 function createAudioBuffer() {
@@ -61,24 +40,44 @@ function createAudioBuffer() {
 }
 
 function getBufferCallback( buffers ) {
-  console.log('buffers: ', buffers);
-  console.log('recorder: ', recorder);
-  var frameBufferSize = recorder.config.bufferLen;
-  // var bufferSize = (frameBufferSize/2);
-  let bufferSize = recorder.context.sampleRate;
-  console.log('bufferSize: ', bufferSize);
+  const frameBufferSize = recorder.config.bufferLen;
+  const bufferSize = recorder.context.sampleRate;
+  const interlevedSignal = interleave(buffers[0], buffers[1]);
+  const fftData = runFFT(interlevedSignal);
+  console.log('fftData: ', fftData);
+  return fftData;
+}
 
-  let interlevedSignal = interleave(buffers[0], buffers[1]);
-
-  let signal = downsampleBuffer(interlevedSignal, 2048, bufferSize);
+function runFFT( signal ) {
   console.log('signal: ', signal);
+  // Use the in-place mapper to populate the data.
+  const data = new ComplexArray(32768).map((value, i, n) => {
+    value.real = signal[i];
+  });
+  console.log('data: ', data);
+  drawToCanvas('original', data);
+  data.FFT();
+  drawToCanvas('fft', data);
 
-  // var signal = new Float32Array(bufferSize);
+  // filter out extreme values???
+  data.map((freq, i, n) => {
+    if (i > n/5 && i < 4*n/5) {
+      freq.real = 0;
+      freq.imag = 0;
+    }
+  });
+  drawToCanvas('fft_filtered', data);
 
-  var fft = new FFT(2048, 44100);
+  drawToCanvas('original_filtered', data.InvFFT());
 
-  fft.forward(signal);
-  var spectrum = fft.spectrum;
+  drawToCanvas('all_in_one', data.frequencyMap((freq, i, n) => {
+      if (i > n/5 && i < 4*n/5) {
+        freq.real = 0;
+        freq.imag = 0;
+      }
+    }));
+
+  return data;
 }
 
 // Convert stereo signal into a mono signal
@@ -89,31 +88,6 @@ function interleave(inputL, inputR){
   return result;
 }
 
-function downsampleBuffer(buffer, rate, sampleRate) {
-    if (rate == sampleRate) {
-        return buffer;
-    }
-    if (rate > sampleRate) {
-        throw "downsampling rate show be smaller than original sample rate";
-    }
-    var sampleRateRatio = sampleRate / rate;
-    var newLength = Math.round(buffer.length / sampleRateRatio);
-    var result = new Float32Array(newLength);
-    var offsetResult = 0;
-    var offsetBuffer = 0;
-    while (offsetResult < result.length) {
-        var nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-        var accum = 0, count = 0;
-        for (var i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-            accum += buffer[i];
-            count++;
-        }
-        result[offsetResult] = accum / count;
-        offsetResult++;
-        offsetBuffer = nextOffsetBuffer;
-    }
-    return result;
-}
 
 window.onload = function init() {
   try {
